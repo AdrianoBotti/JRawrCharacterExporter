@@ -37,10 +37,7 @@ local function newState()
         itemEquipLoc = {},
         itemInfoCalls = 0,
         spellNames = {},
-        professions = {},
-        professionInfo = {},
-        professionInfoCalls = 0,
-        professionZeroCalls = 0,
+        skillLines = {},
     }
 end
 
@@ -273,22 +270,16 @@ function GetItemInfo(itemOrLink)
     return "Test item", nil, 4, 200, 80, "Armor", "Cloth", 1,
         equipLoc or "INVTYPE_HEAD", "Interface\\Icons\\inv_misc_questionmark", 1000, 4, 0
 end
-function GetProfessions()
-    local professions = state.professions
-    return professions[1], professions[2], professions[3], professions[4],
-        professions[5], professions[6], professions[7]
+function GetNumSkillLines()
+    return #state.skillLines
 end
-function GetProfessionInfo(index)
-    state.professionInfoCalls = state.professionInfoCalls + 1
-    if index == 0 then
-        state.professionZeroCalls = state.professionZeroCalls + 1
+function GetSkillLineInfo(index)
+    local line = state.skillLines[index]
+    if not line then
         return nil
     end
-    local info = state.professionInfo[index]
-    if not info then
-        return nil
-    end
-    return info.name, "icon", 450, 450, 0, 0, info.skillLine
+    return line.name, line.isHeader or false, true, line.rank or 450,
+        0, 0, line.maxRank or 450, false, 0, 0, 1, 1, ""
 end
 
 local function showExport()

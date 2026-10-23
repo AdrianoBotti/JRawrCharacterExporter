@@ -389,33 +389,29 @@ local function buildTalentString(classToken, warnings)
         talentPoints, majorMatched, majorSlots
 end
 
-local function professionName(index)
-    -- GetProfessions returns 0 for an empty profession slot; index 0 is not a valid argument to
-    -- GetProfessionInfo (it can return nil or raise, depending on the client).
-    if not index or index == 0 or not GetProfessionInfo then
+local function professionName(name)
+    if not name then
         return nil
     end
-    local name, _, _, _, _, _, skillLine = GetProfessionInfo(index)
-    if skillLine and PROFESSION_BY_SKILL_LINE[skillLine] then
-        return PROFESSION_BY_SKILL_LINE[skillLine]
-    end
-    if name then
-        return PROFESSION_BY_NAME[string.lower(name)]
-    end
-    return nil
+    -- 3.3.5 GetSkillLineInfo returns localized names, not skill-line ids, so match the name.
+    local key = string.lower(name):match("^%s*(.-)%s*$")
+    return key and PROFESSION_BY_NAME[key] or nil
 end
 
 local function addProfessions(parts)
-    if not GetProfessions then
+    if not GetNumSkillLines or not GetSkillLineInfo then
         return
     end
-    local p1, p2, p3, p4, p5, p6, p7 = GetProfessions()
-    local candidates = { p1, p2, p3, p4, p5, p6, p7 }
-    local found = {}
-    for i = 1, 7 do
-        local name = professionName(candidates[i])
-        if name and not found[name] then
-            found[#found + 1] = name
+    local found, seen = {}, {}
+    local count = GetNumSkillLines() or 0
+    for i = 1, count do
+        local name, isHeader = GetSkillLineInfo(i)
+        if not isHeader then
+            local profession = professionName(name)
+            if profession and not seen[profession] then
+                seen[profession] = true
+                found[#found + 1] = profession
+            end
         end
     end
     if found[1] then

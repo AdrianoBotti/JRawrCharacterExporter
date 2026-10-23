@@ -163,10 +163,9 @@ test("mage full export", function()
         [1] = itemLink(51281, 3820, 41285, 40133, 0),
         [16] = itemLink(50732, 0, 0, 0, 0),
     }
-    state.professions = { 1, 2, 0, 0, 0, 0, 0 }
-    state.professionInfo = {
-        [1] = { name = "Enchanting", skillLine = 333 },
-        [2] = { name = "Tailoring", skillLine = 197 },
+    state.skillLines = {
+        { name = "Enchanting" },
+        { name = "Tailoring" },
     }
 
     local xml, status = showExport()
@@ -279,8 +278,8 @@ test("missing region, professions and shapeshift APIs degrade safely", function(
     equal(tag(xml, "Region"), "US", "region fallback")
 
     scenario()
-    xml = withoutGlobal("GetProfessions", showExport)
-    check(not hasTag(xml, "PrimaryProfession"), "missing GetProfessions exports none")
+    xml = withoutGlobal("GetNumSkillLines", showExport)
+    check(not hasTag(xml, "PrimaryProfession"), "missing GetNumSkillLines exports none")
 
     scenario({ classToken = "DRUID", className = "Druid", points = { 0, 60, 0 } })
     xml = withoutGlobal("GetShapeshiftForm", showExport)
@@ -328,20 +327,20 @@ test("metadata and text are XML-escaped", function()
     recordSample("escaping", xml)
 end)
 
-test("professions: empty slots never call GetProfessionInfo(0)", function()
+test("professions: empty skill lines export none", function()
     scenario()
-    state.professions = { 0, 0, 0, 0, 0, 0, 0 }
+    state.skillLines = {}
     local xml = showExport()
-    equal(state.professionZeroCalls, 0, "GetProfessionInfo(0) calls")
     check(not hasTag(xml, "PrimaryProfession"), "empty primary profession")
     check(not hasTag(xml, "SecondaryProfession"), "empty secondary profession")
 end)
 
 test("professions: secondary skills are not Rawr professions", function()
     scenario()
-    state.professions = { 0, 0, 1, 0, 0, 0, 0 }
-    state.professionInfo = {
-        [1] = { name = "Cooking", skillLine = 185 },
+    state.skillLines = {
+        { name = "Cooking" },
+        { name = "Fishing" },
+        { name = "First Aid" },
     }
     local xml = showExport()
     check(not hasTag(xml, "PrimaryProfession"), "cooking is not exported")
@@ -350,11 +349,11 @@ end)
 
 test("professions: two primary professions", function()
     scenario()
-    state.professions = { 1, 2, 3, 0, 0, 0, 0 }
-    state.professionInfo = {
-        [1] = { name = "Jewelcrafting", skillLine = 755 },
-        [2] = { name = "Blacksmithing", skillLine = 164 },
-        [3] = { name = "Fishing", skillLine = 356 },
+    state.skillLines = {
+        { name = "Professions", isHeader = true },
+        { name = "Jewelcrafting" },
+        { name = "Blacksmithing" },
+        { name = "Fishing" },
     }
     local xml = showExport()
     equal(tag(xml, "PrimaryProfession"), "Jewelcrafting", "primary")

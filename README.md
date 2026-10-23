@@ -84,6 +84,8 @@ present in Rawr's table are still exported.
 - Glyphs are matched by their English glyph name from the item link, with the glyph spell name as
   a fallback (both are localized, so this remains an enUS-reliable path). Talents use the game's
   tier/column positions and are locale-independent.
+- Professions are read from the 3.3.5 skill-line list and matched by their English names;
+  localized or custom profession names are not mapped.
 - If the character has no talent points in any tree, a sensible class default model is used.
 
 ## Development

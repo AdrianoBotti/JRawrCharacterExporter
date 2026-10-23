@@ -1,7 +1,7 @@
 ## Interface: 30300
 ## Title: JRawr Character Exporter
 ## Notes: Builds the current character setup as Rawr character XML for copy/paste into JRawr's Import tab.
-## Version: 1.0.0
+## Version: 1.0.1
 JRawrCharacterExporterClasses.lua
 JRawrCharacterExporterData.lua
 JRawrCharacterExporter.lua

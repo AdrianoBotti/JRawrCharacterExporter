@@ -62,7 +62,7 @@ specific client build, taint, secure-code restrictions, or the copy/paste UI; th
 manual run on a 3.3.5 client. See `docs/IN_GAME_TEST.md`.
 
 The stubs are the harness's model of the client. They follow the documented 3.3.5 signatures
-(`GetTalentInfo`, `GetTalentTabInfo`, `GetProfessions`, `GetProfessionInfo`). In particular,
+(`GetTalentInfo`, `GetTalentTabInfo`, `GetNumSkillLines`, `GetSkillLineInfo`). In particular,
 `GetGlyphSocketInfo(socket, group)` returns `enabled, glyphType, glyphSpellID, icon` and no link;
 enabled means the socket is unlocked. Glyph presence/name comes from
 `GetGlyphLink(socket, GetActiveTalentGroup())` (stubbed with `""` for empty sockets), with
