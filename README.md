@@ -91,15 +91,16 @@ present in Rawr's table are still exported.
 ## Development
 
 `JRawrCharacterExporterData.lua` is generated from the talent/glyph annotations in the JRawr
-repository. From a JRawr checkout, with this repository next to it:
+repository. From this repository, with a JRawr checkout next to it:
 
 ```bash
-python3 tools/addon-data-gen/generate.py --addon-dir ../JRawrCharacterExporter
-python3 tools/addon-data-gen/generate.py --check --addon-dir ../JRawrCharacterExporter
+python3 tools/addon-data-gen/generate.py
+python3 tools/addon-data-gen/generate.py --check
 ```
 
-The XML output samples under `test/output_samples/` are also vendored into JRawr's `rawr-data`
-tests, so an intentional output change must regenerate them here and update the copies in JRawr.
+The XML output samples under `test/output_samples/` are this repository's importer contract. JRawr
+no longer vendors them; regenerate them here after an intentional output change and keep the XML
+schema compatible with JRawr's generic character importer.
 
 `JRawrCharacterExporterClasses.lua` is shared by the addon and the harness; the addon loads it
 before the generated data table. `check.sh` runs `luacheck` if available, then the Lua suite and

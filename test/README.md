@@ -38,21 +38,18 @@ sudo apt-get install lua5.1 lua-check
 test/run.sh --write-samples
 ```
 
-The output samples are committed and also vendored into JRawr, where
-`JRawrCharacterExporterAddonSamplesTest` (in `rawr-data`) loads them through the same
-`CharacterFixtureLoader` as the web Import tab. A normal harness run compares the generated XML
-against the committed output samples and fails when they are stale, so after an intentional addon
-output change run `--write-samples` and inspect the diff: they are the contract between the Lua
-addon and JRawr. Copy the regenerated output samples into the JRawr repository as well.
+The output samples are committed here and compared byte-for-byte by a normal harness run. They are
+the addon's own XML/importer contract; JRawr no longer vendors copies (DECISIONS #129). After an
+intentional addon output change run `--write-samples` and inspect the diff.
 
 ## Data table
 
 `JRawrCharacterExporterData.lua` is generated from the talent/glyph annotations in the JRawr
 repository; verify it is current (and that every talent/glyph annotation is covered exactly once)
-from a JRawr checkout with:
+from this repository, with a JRawr checkout next to it:
 
 ```bash
-python3 tools/addon-data-gen/generate.py --check --addon-dir ../JRawrCharacterExporter
+python3 tools/addon-data-gen/generate.py --check
 ```
 
 ## Limit
