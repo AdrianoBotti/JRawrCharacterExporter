@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Character xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>Testmage</Name>
+  <Realm>TestRealm</Realm>
+  <Region>EU</Region>
+  <Race>Human</Race>
+  <Class>Mage</Class>
+  <CurrentModel>Mage</CurrentModel>
+  <EnforceMetagemRequirements>true</EnforceMetagemRequirements>
+  <Head>51281.41285.40133.0.3820</Head>
+  <MainHand>12345.0.0.0.0</MainHand>
+  <AvailableItems>51281.41285.40133.0.3820</AvailableItems>
+  <AvailableItems>12345</AvailableItems>
+  <MageTalents>23000000000000000000000000000000050000000000000000000000000000000000000000000000000000.1000000000010000000</MageTalents>
+  <PrimaryProfession>Enchanting</PrimaryProfession>
+  <SecondaryProfession>Tailoring</SecondaryProfession>
+</Character>

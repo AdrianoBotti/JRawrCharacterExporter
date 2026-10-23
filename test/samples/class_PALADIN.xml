@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Character xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>TestPaladin</Name>
+  <Realm>TestRealm</Realm>
+  <Region>US</Region>
+  <Race>Human</Race>
+  <Class>Paladin</Class>
+  <CurrentModel>Healadin</CurrentModel>
+  <EnforceMetagemRequirements>true</EnforceMetagemRequirements>
+  <PaladinTalents>000000000000000000000000000000000000000000000000000000000000000000000000000000.0000000000000000000000000000000000</PaladinTalents>
+</Character>

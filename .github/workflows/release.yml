@@ -1,0 +1,27 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package addon
+        run: |
+          mkdir -p dist/JRawrCharacterExporter
+          cp JRawrCharacterExporter.toc JRawrCharacterExporter.lua \
+             JRawrCharacterExporterData.lua README.md LICENSE NOTICE \
+             dist/JRawrCharacterExporter/
+          cd dist
+          zip -r "../JRawrCharacterExporter-${GITHUB_REF_NAME}.zip" JRawrCharacterExporter
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" JRawrCharacterExporter-*.zip --generate-notes

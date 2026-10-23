@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Character xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>A&amp;B&lt;C&gt;&quot;D&apos;</Name>
+  <Realm>Réalm &amp; Co</Realm>
+  <Region>CN</Region>
+  <Race>Tauren</Race>
+  <Class>Druid</Class>
+  <CurrentModel>Bear</CurrentModel>
+  <EnforceMetagemRequirements>true</EnforceMetagemRequirements>
+  <DruidTalents>0000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0000000000000000000000000</DruidTalents>
+</Character>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Character xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>TestShaman</Name>
+  <Realm>TestRealm</Realm>
+  <Region>US</Region>
+  <Race>Human</Race>
+  <Class>Shaman</Class>
+  <CurrentModel>Elemental</CurrentModel>
+  <EnforceMetagemRequirements>true</EnforceMetagemRequirements>
+  <ShamanTalents>00000000000000000000000000000000000000000000000000000000000000000000000000000000.00000000000000000000000000000</ShamanTalents>
+</Character>

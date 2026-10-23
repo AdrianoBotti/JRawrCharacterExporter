@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Character xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>TestPriest</Name>
+  <Realm>TestRealm</Realm>
+  <Region>US</Region>
+  <Race>Human</Race>
+  <Class>Priest</Class>
+  <CurrentModel>HealPriest</CurrentModel>
+  <EnforceMetagemRequirements>true</EnforceMetagemRequirements>
+  <PriestTalents>0000000000000000000000000000000000000000000000000000000000000000000000000000000000.000000000000000000000000000000000</PriestTalents>
+</Character>

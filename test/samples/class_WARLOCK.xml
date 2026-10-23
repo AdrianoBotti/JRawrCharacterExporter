@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Character xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>TestWarlock</Name>
+  <Realm>TestRealm</Realm>
+  <Region>US</Region>
+  <Race>Human</Race>
+  <Class>Warlock</Class>
+  <CurrentModel>Warlock</CurrentModel>
+  <EnforceMetagemRequirements>true</EnforceMetagemRequirements>
+  <WarlockTalents>000000000000000000000000000000000000000000000000000000000000000000000000000000000.00000000000000000</WarlockTalents>
+</Character>
