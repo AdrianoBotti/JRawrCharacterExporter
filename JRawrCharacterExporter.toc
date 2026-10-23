@@ -2,5 +2,6 @@
 ## Title: JRawr Character Exporter
 ## Notes: Builds the current character setup as Rawr character XML for copy/paste into JRawr's Import tab.
 ## Version: 1.0.0
+JRawrCharacterExporterClasses.lua
 JRawrCharacterExporterData.lua
 JRawrCharacterExporter.lua

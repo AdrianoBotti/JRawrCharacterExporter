@@ -3,10 +3,10 @@
 --   lua5.1 test/run.lua
 --   lua5.1 test/run.lua --write-samples
 --
--- The harness stubs the WoW 3.3.5 API, loads the real addon, and checks the generated Rawr XML.
--- --write-samples regenerates test/samples/*.xml, which JRawrCharacterExporterAddonSamplesTest
--- loads through the Java character importer. The committed samples are the contract between the Lua
--- addon and the Java side.
+-- The harness (test/wow_api.lua) stubs the WoW 3.3.5 API. This file loads the real addon files,
+-- runs the scenarios and checks the generated Rawr XML. --write-samples regenerates
+-- test/output_samples/*.xml, which JRawrCharacterExporterAddonSamplesTest loads through the Java
+-- character importer. The committed samples are the contract between the Lua addon and Java.
 
 local scriptPath = (arg and arg[0]) or "test/run.lua"
 local scriptDir = scriptPath:match("^(.*)[/\\][^/\\]*$") or "."
@@ -18,301 +18,21 @@ for _, value in ipairs(arg or {}) do
     end
 end
 
----------------------------------------------------------------------------------------------------
--- WoW 3.3.5 API stub
----------------------------------------------------------------------------------------------------
+local wow = dofile(scriptDir .. "/wow_api.lua")
+local state = wow.state
+local printed = wow.printed
+local realPrint = wow.realPrint
+local scenario = wow.scenario
+local resetPrinted = wow.resetPrinted
+local showExport = wow.showExport
 
-local CLASS_NAMES = {
-    WARRIOR = "Warrior",
-    PALADIN = "Paladin",
-    HUNTER = "Hunter",
-    ROGUE = "Rogue",
-    PRIEST = "Priest",
-    DEATHKNIGHT = "DeathKnight",
-    SHAMAN = "Shaman",
-    MAGE = "Mage",
-    WARLOCK = "Warlock",
-    DRUID = "Druid",
-}
-
-local RACE_NAMES = {
-    Human = "Human",
-    Orc = "Orc",
-    Dwarf = "Dwarf",
-    NightElf = "NightElf",
-    Scourge = "Undead",
-    Tauren = "Tauren",
-    Gnome = "Gnome",
-    Troll = "Troll",
-    BloodElf = "BloodElf",
-    Draenei = "Draenei",
-}
-
-local TALENT_ELEMENTS = {
-    WARRIOR = "WarriorTalents",
-    PALADIN = "PaladinTalents",
-    HUNTER = "HunterTalents",
-    ROGUE = "RogueTalents",
-    PRIEST = "PriestTalents",
-    DEATHKNIGHT = "DeathKnightTalents",
-    SHAMAN = "ShamanTalents",
-    MAGE = "MageTalents",
-    WARLOCK = "WarlockTalents",
-    DRUID = "DruidTalents",
-}
-
-local printed = {}
-local realPrint = print
-print = function(...)
-    local parts = {}
-    for i = 1, select("#", ...) do
-        parts[#parts + 1] = tostring(select(i, ...))
-    end
-    printed[#printed + 1] = table.concat(parts, " ")
+dofile(addonDir .. "/JRawrCharacterExporterClasses.lua")
+local classData = JRawrCharacterExporterClasses
+local CLASS_NAMES, TALENT_ELEMENTS = {}, {}
+for token, info in pairs(classData) do
+    CLASS_NAMES[token] = info.name
+    TALENT_ELEMENTS[token] = info.talentElement
 end
-
-local state
-
-local function newState()
-    return {
-        name = "Testmage",
-        realm = "TestRealm",
-        region = 1,
-        raceToken = "Human",
-        raceName = "Human",
-        classToken = "MAGE",
-        className = "Mage",
-        form = 0,
-        tabs = 3,
-        points = { 60, 0, 0 },
-        talents = {},
-        glyphSockets = {},
-        glyphSocketCount = 6,
-        talentGroup = 1,
-        inventory = {},
-        bags = {},
-        itemEquipLoc = {},
-        professions = {},
-        professionInfo = {},
-        professionInfoCalls = 0,
-        professionZeroCalls = 0,
-    }
-end
-
-local function resetPrinted()
-    printed = {}
-end
-
-local function scenario(overrides)
-    state = newState()
-    for key, value in pairs(overrides or {}) do
-        state[key] = value
-    end
-    if not state.className then
-        state.className = CLASS_NAMES[state.classToken] or state.classToken
-    end
-    if not state.raceName then
-        state.raceName = RACE_NAMES[state.raceToken] or state.raceToken
-    end
-    resetPrinted()
-    return state
-end
-
-local function newWidget(kind, name)
-    local widget = {
-        kind = kind,
-        scripts = {},
-        hidden = kind == "Frame",
-        width = 0,
-        height = kind == "ScrollFrame" and 470 or 0,
-        text = "",
-        value = 0,
-        min = 0,
-        max = 0,
-        scroll = 0,
-    }
-
-    function widget:SetWidth(value) self.width = value end
-    function widget:SetHeight(value) self.height = value end
-    function widget:GetHeight() return self.height end
-    function widget:SetPoint() end
-    function widget:SetFrameStrata() end
-    function widget:SetMovable() end
-    function widget:EnableMouse() end
-    function widget:RegisterForDrag() end
-    function widget:SetClampedToScreen() end
-    function widget:SetBackdrop() end
-    function widget:StartMoving() end
-    function widget:StopMovingOrSizing() end
-    function widget:SetScript(event, handler) self.scripts[event] = handler end
-    function widget:Show()
-        self.hidden = false
-        if self.scripts.OnShow then
-            self.scripts.OnShow(self)
-        end
-    end
-    function widget:Hide()
-        self.hidden = true
-        if self.scripts.OnHide then
-            self.scripts.OnHide(self)
-        end
-    end
-    function widget:IsShown() return not self.hidden end
-    function widget:SetText(value) self.text = value or "" end
-    function widget:GetText() return self.text end
-    function widget:SetMultiLine() end
-    function widget:SetAutoFocus() end
-    function widget:SetMaxLetters() end
-    function widget:SetFontObject() end
-    function widget:GetFont() return "Fonts\\FRIZQT__.TTF", 12, "" end
-    function widget:SetJustifyH() end
-    function widget:SetScrollChild() end
-    function widget:EnableMouseWheel() end
-    function widget:SetValueStep() end
-    function widget:SetMinMaxValues(minimum, maximum)
-        self.min = minimum
-        self.max = maximum
-        if self.value < self.min then
-            self:SetValue(self.min)
-        elseif self.value > self.max then
-            self:SetValue(self.max)
-        end
-    end
-    function widget:GetMinMaxValues() return self.min, self.max end
-    function widget:SetValue(value)
-        if value < self.min then value = self.min end
-        if value > self.max then value = self.max end
-        if self.value ~= value then
-            self.value = value
-            if self.scripts.OnValueChanged then
-                self.scripts.OnValueChanged(self, value)
-            end
-        end
-    end
-    function widget:GetValue() return self.value end
-    function widget:SetVerticalScroll(value)
-        if self.scroll ~= value then
-            self.scroll = value
-            if self.scripts.OnVerticalScroll then
-                self.scripts.OnVerticalScroll(self, value)
-            end
-        end
-    end
-    function widget:GetVerticalScroll() return self.scroll end
-    function widget:SetFocus() end
-    function widget:ClearFocus() end
-    function widget:HighlightText() end
-    function widget:SetCursorPosition() end
-    function widget:CreateFontString(childName)
-        return newWidget("FontString", childName)
-    end
-
-    if name then
-        _G[name] = widget
-    end
-    return widget
-end
-
-function CreateFrame(kind, name)
-    return newWidget(kind, name)
-end
-
-ChatFontNormal = "ChatFontNormal"
-NUM_GLYPH_SLOTS = 6
-UIParent = newWidget("Frame")
-SlashCmdList = {}
-
-function UnitName() return state.name end
-function GetRealmName() return state.realm end
-function GetCurrentRegion() return state.region end
-function UnitRace() return state.raceName, state.raceToken end
-function UnitClass() return state.className, state.classToken end
-function GetShapeshiftForm() return state.form end
-function GetNumTalentTabs() return state.tabs end
-function GetTalentTabInfo(tab) return "Tree" .. tab, "icon", state.points[tab] or 0 end
-function GetNumTalents(tab) return #(state.talents[tab] or {}) end
-function GetTalentInfo(tab, index)
-    local talent = state.talents[tab] and state.talents[tab][index]
-    if not talent then
-        return "Talent", "icon", 1, 1, 0, 5
-    end
-    return "Talent", "icon", talent[1], talent[2], talent[3], 5
-end
-
--- 3.3.5 socket layout: 1 and 4 and 6 are major, 2, 3 and 5 are minor. The socket keeps its type
--- even when empty (Blizzard_GlyphUI.lua uses it to draw the ring).
-local GLYPH_SOCKET_TYPES = { [1] = 1, [2] = 2, [3] = 2, [4] = 1, [5] = 2, [6] = 1 }
-
-function GetNumGlyphSockets() return state.glyphSocketCount end
--- 3.3.5 signature: enabled, glyphType, glyphSpellID, icon. No link. "enabled" means the socket is
--- unlocked, not that a glyph is present (empty sockets are enabled for a level-80 character).
-function GetGlyphSocketInfo(socket)
-    local glyph = state.glyphSockets[socket]
-    local glyphType = GLYPH_SOCKET_TYPES[socket] or 1
-    if not glyph then
-        return true, glyphType, nil, nil
-    end
-    return glyph.enabled ~= false, glyph.glyphType or glyphType, glyph.spellId, nil
-end
--- 3.3.5: added in 3.1.0; returns "" for an empty (or locked) socket. The talentGroup argument
--- selects the active dual-spec glyph set.
-function GetGlyphLink(socket, group)
-    local glyph = state.glyphSockets[socket]
-    if not glyph or glyph.enabled == false then
-        return ""
-    end
-    if group == 2 and glyph.link2 then
-        return glyph.link2
-    end
-    return glyph.link or ""
-end
-function GetActiveTalentGroup() return state.talentGroup end
-
-function GetInventoryItemLink(_, slot) return state.inventory[slot] end
-function GetContainerNumSlots(bag)
-    local contents = state.bags[bag]
-    return contents and #contents or 0
-end
-function GetContainerItemLink(bag, slot)
-    local contents = state.bags[bag]
-    return contents and contents[slot] or nil
-end
-function GetItemInfo(itemOrLink)
-    local id
-    if type(itemOrLink) == "number" then
-        id = itemOrLink
-    else
-        id = tonumber(string.match(tostring(itemOrLink), "item:(%d+)"))
-    end
-    if not id then
-        return nil
-    end
-    local equipLoc = state.itemEquipLoc[id]
-    if equipLoc == false then
-        return nil
-    end
-    return "Test item", nil, 4, 200, 80, "Armor", "Cloth", 1,
-        equipLoc or "INVTYPE_HEAD", "Interface\\Icons\\inv_misc_questionmark", 1000, 4, 0
-end
-function GetProfessions()
-    local professions = state.professions
-    return professions[1], professions[2], professions[3], professions[4],
-        professions[5], professions[6], professions[7]
-end
-function GetProfessionInfo(index)
-    state.professionInfoCalls = state.professionInfoCalls + 1
-    if index == 0 then
-        state.professionZeroCalls = state.professionZeroCalls + 1
-        return nil
-    end
-    local info = state.professionInfo[index]
-    if not info then
-        return nil
-    end
-    return info.name, "icon", 450, 450, 0, 0, info.skillLine
-end
-
--- The real files; the data table must be global before the addon captures it.
 dofile(addonDir .. "/JRawrCharacterExporterData.lua")
 dofile(addonDir .. "/JRawrCharacterExporter.lua")
 
@@ -322,6 +42,7 @@ dofile(addonDir .. "/JRawrCharacterExporter.lua")
 
 local assertions = 0
 local failures = 0
+local testErrors = 0
 local currentTest = "?"
 
 local function check(condition, message)
@@ -349,9 +70,15 @@ end
 
 local function test(name, body)
     currentTest = name
-    local ok, message = pcall(body)
+    local ok, message = xpcall(function()
+        scenario()
+        body()
+    end, function(err)
+        return debug.traceback(tostring(err), 2)
+    end)
     if not ok then
         failures = failures + 1
+        testErrors = testErrors + 1
         realPrint("FAIL " .. name .. ": " .. tostring(message))
     end
 end
@@ -372,12 +99,13 @@ local function countChar(text, char)
     return count
 end
 
-local function showExport()
-    local frame = _G.JRawrCharacterExporterFrame
-    assert(frame, "JRawrCharacterExporterFrame was not created")
-    frame.hidden = true
-    frame:Show()
-    return _G.JRawrCharacterExporterEditBox:GetText(), _G.JRawrCharacterExporterStatus:GetText()
+local function withoutGlobal(name, fn)
+    local saved = _G[name]
+    _G[name] = nil
+    local ok, first, second = pcall(fn)
+    _G[name] = saved
+    assert(ok, first)
+    return first, second
 end
 
 local samples = {}
@@ -386,7 +114,7 @@ local function recordSample(name, xml)
         samples[name] = xml
         return
     end
-    local path = scriptDir .. "/samples/" .. name .. ".xml"
+    local path = scriptDir .. "/output_samples/" .. name .. ".xml"
     local file = io.open(path, "rb")
     if not file then
         check(false, "missing sample " .. path .. " (run with --write-samples)")
@@ -415,6 +143,12 @@ end
 -- Tests
 ---------------------------------------------------------------------------------------------------
 
+test("scenario rejects unknown fixture keys", function()
+    local ok, err = pcall(scenario, { bogusKey = true })
+    check(not ok, "unknown scenario key fails")
+    contains(err, "unknown key bogusKey", "scenario error names the key")
+end)
+
 test("mage full export", function()
     scenario({ points = { 60, 11, 0 }, region = 3 })
     state.talents = {
@@ -427,7 +161,7 @@ test("mage full export", function()
     }
     state.inventory = {
         [1] = itemLink(51281, 3820, 41285, 40133, 0),
-        [16] = itemLink(12345, 0, 0, 0, 0),
+        [16] = itemLink(50732, 0, 0, 0, 0),
     }
     state.professions = { 1, 2, 0, 0, 0, 0, 0 }
     state.professionInfo = {
@@ -444,7 +178,7 @@ test("mage full export", function()
     equal(tag(xml, "CurrentModel"), "Mage", "model")
     equal(tag(xml, "EnforceMetagemRequirements"), "true", "meta gem requirement")
     equal(tag(xml, "Head"), "51281.41285.40133.0.3820", "head gemmed id")
-    equal(tag(xml, "MainHand"), "12345.0.0.0.0", "main hand gemmed id")
+    equal(tag(xml, "MainHand"), "50732.0.0.0.0", "main hand gemmed id")
     equal(tag(xml, "PrimaryProfession"), "Enchanting", "primary profession")
     equal(tag(xml, "SecondaryProfession"), "Tailoring", "secondary profession")
     notContains(xml, "<Neck>", "empty neck")
@@ -502,6 +236,55 @@ test("bags and bank contribute available equippable items", function()
     notContains(xml, "<AvailableItems>10003", "non-equippable bag item is skipped")
     equal(select(2, xml:gsub("<AvailableItems>10001</AvailableItems>", "")), 1,
         "duplicate availability entry is collapsed")
+end)
+
+test("partial gemming stays exact in availability entries", function()
+    scenario()
+    state.itemEquipLoc[30001] = "INVTYPE_CHEST"
+    state.bags[0] = { itemLink(30001, 0, 111, 0, 0) }
+    local xml = showExport()
+    contains(xml, "<AvailableItems>30001.111.0.0.*</AvailableItems>",
+        "partial gemming stays exact")
+end)
+
+test("item info is cached for duplicate bag items", function()
+    scenario()
+    state.itemEquipLoc[30002] = "INVTYPE_HEAD"
+    state.bags[0] = { itemLink(30002), itemLink(30002) }
+    local before = state.itemInfoCalls
+    showExport()
+    equal(state.itemInfoCalls - before, 1, "GetItemInfo called once per item id")
+end)
+
+test("unknown item info keeps bag items available", function()
+    scenario()
+    state.bags[0] = { itemLink(30004) }
+    local xml = withoutGlobal("GetItemInfo", showExport)
+    contains(xml, "<AvailableItems>30004</AvailableItems>", "unknown item is kept")
+end)
+
+test("equipped quiver is exported as ProjectileBag", function()
+    scenario()
+    state.inventory[20] = itemLink(30003)
+    state.itemEquipLoc[30003] = "INVTYPE_QUIVER"
+    local xml = showExport()
+    equal(tag(xml, "ProjectileBag"), "30003.0.0.0.0", "projectile bag")
+    contains(xml, "<AvailableItems>30003</AvailableItems>", "projectile bag availability")
+end)
+
+test("missing region, professions and shapeshift APIs degrade safely", function()
+    scenario()
+    state.region = 99
+    local xml = withoutGlobal("GetCurrentRegion", showExport)
+    equal(tag(xml, "Region"), "US", "region fallback")
+
+    scenario()
+    xml = withoutGlobal("GetProfessions", showExport)
+    check(not hasTag(xml, "PrimaryProfession"), "missing GetProfessions exports none")
+
+    scenario({ classToken = "DRUID", className = "Druid", points = { 0, 60, 0 } })
+    xml = withoutGlobal("GetShapeshiftForm", showExport)
+    equal(tag(xml, "CurrentModel"), "Cat", "missing GetShapeshiftForm defaults to Cat")
 end)
 
 test("all inventory slots map to Rawr names", function()
@@ -600,13 +383,29 @@ end)
 
 test("a client without GetGlyphLink warns instead of silently dropping glyphs", function()
     scenario()
-    local saved = GetGlyphLink
-    GetGlyphLink = nil
-    local xml = showExport()
-    GetGlyphLink = saved
+    local xml = withoutGlobal("GetGlyphLink", showExport)
     contains(table.concat(printed, "\n"), "GetGlyphLink is unavailable", "warning")
     local _, glyphs = splitTalents(xml, "MageTalents")
     equal(countChar(glyphs, "1"), 0, "no glyph flags without GetGlyphLink")
+end)
+
+test("glyph spell IDs are used when GetGlyphLink is unavailable", function()
+    scenario()
+    state.spellNames[9999] = "Glyph of Fireball"
+    state.glyphSockets[1] = { enabled = true, spellId = 9999 }
+    local xml = withoutGlobal("GetGlyphLink", showExport)
+    local _, glyphs = splitTalents(xml, "MageTalents")
+    equal(glyphs:sub(1, 1), "1", "glyph matched through its spell ID")
+end)
+
+test("missing GetGlyphLink and GetSpellInfo disables glyph export", function()
+    scenario()
+    local xml = withoutGlobal("GetGlyphLink", function()
+        return withoutGlobal("GetSpellInfo", showExport)
+    end)
+    local _, glyphs = splitTalents(xml, "MageTalents")
+    equal(countChar(glyphs, "1"), 0, "no glyph flags without link or spell APIs")
+    contains(table.concat(printed, "\n"), "glyphs cannot be exported", "warning")
 end)
 
 test("glyphs follow the active dual-spec talent group", function()
@@ -644,9 +443,12 @@ test("model inference for every class and spec", function()
         { "DEATHKNIGHT", { 0, 0, 60 }, 0, "DPSDK" },
         { "DRUID", { 60, 0, 0 }, 0, "Moonkin" },
         { "DRUID", { 0, 0, 60 }, 0, "Tree" },
+        { "DRUID", { 60, 0, 0 }, 1, "Moonkin" },
+        { "DRUID", { 0, 0, 60 }, 1, "Tree" },
         { "DRUID", { 0, 60, 0 }, 0, "Cat" },
         { "DRUID", { 0, 60, 0 }, 1, "Bear" },
         { "DRUID", { 0, 60, 0 }, 3, "Cat" },
+        { "DRUID", { 0, 60, 0 }, 5, "Moonkin" },
         { "HUNTER", { 60, 0, 0 }, 0, "Hunter" },
         { "ROGUE", { 60, 0, 0 }, 0, "Rogue" },
         { "MAGE", { 0, 0, 60 }, 0, "Mage" },
@@ -673,6 +475,35 @@ test("model inference for every class and spec", function()
             sampled[token] = true
             recordSample("class_" .. token, xml)
         end
+    end
+end)
+
+test("druid form 5 distinguishes Tree of Life from Moonkin", function()
+    scenario({ classToken = "DRUID", className = "Druid", points = { 0, 60, 0 }, form = 5 })
+    state.formIcon5 = "Interface\\Icons\\Ability_Druid_TreeofLife"
+    equal(tag(showExport(), "CurrentModel"), "Tree", "tree of life form")
+end)
+
+test("zero talent points use the class fallback model", function()
+    local cases = {
+        { "WARRIOR", "DPSWarr" },
+        { "PALADIN", "Retribution" },
+        { "HUNTER", "Hunter" },
+        { "ROGUE", "Rogue" },
+        { "PRIEST", "HealPriest" },
+        { "DEATHKNIGHT", "DPSDK" },
+        { "SHAMAN", "Elemental" },
+        { "MAGE", "Mage" },
+        { "WARLOCK", "Warlock" },
+        { "DRUID", "Cat" },
+    }
+    for _, case in ipairs(cases) do
+        scenario({
+            classToken = case[1],
+            className = CLASS_NAMES[case[1]],
+            points = { 0, 0, 0 },
+        })
+        equal(tag(showExport(), "CurrentModel"), case[2], case[1] .. " zero-point fallback")
     end
 end)
 
@@ -807,18 +638,19 @@ end)
 if writeSamples then
     local count = 0
     for name, xml in pairs(samples) do
-        local file = assert(io.open(scriptDir .. "/samples/" .. name .. ".xml", "wb"))
+        local file = assert(io.open(scriptDir .. "/output_samples/" .. name .. ".xml", "wb"))
         file:write(xml)
         file:close()
         count = count + 1
     end
-    realPrint("wrote " .. count .. " samples to " .. scriptDir .. "/samples")
+    realPrint("wrote " .. count .. " samples to " .. scriptDir .. "/output_samples")
 end
 
 if failures == 0 then
     realPrint(string.format("PASS %d assertions", assertions))
     os.exit(0)
 else
-    realPrint(string.format("FAIL %d of %d assertions", failures, assertions))
+    realPrint(string.format("FAIL %d of %d assertions (%d test errors)",
+        failures, assertions, testErrors))
     os.exit(1)
 end

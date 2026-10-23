@@ -1,5 +1,11 @@
 -- Generated in the JRawr repository by tools/addon-data-gen/generate.py; do not edit by hand.
 -- Source: jrawr/rawr-core/src/main/java/rawr/base/talents/*Talents.java
+--
+-- Why this table is needed: the WoW API identifies talents by (tab, tier, column) and
+-- glyphs by English name, while Rawr's compact talent string is indexed by position in
+-- each class's Talents.java data/glyphData arrays. This table maps the game's identifiers
+-- to those Rawr indices. The values are array indices, not Blizzard spell/talent ids.
+--
 JRawrCharacterExporterData = {
     ["WARRIOR"] = {
         talentCount = 85,

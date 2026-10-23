@@ -1,4 +1,4 @@
--- JRawr Character Exporter: builds the current character's Rawr XML and shows it in a copyable box.
+-- JRawr Character Exporter: builds the current character's Rawr-compatible XML and shows it in a copyable box.
 --
 -- WoW 3.3.5 addons cannot write arbitrary files, so this addon displays the XML in an edit box.
 -- Use "Select All" (or click the box and press Ctrl+A), press Ctrl+C, then paste it into JRawr's
@@ -46,57 +46,11 @@ local RACE_NAMES = {
     Draenei = "Draenei",
 }
 
-local CLASS_NAMES = {
-    WARRIOR = "Warrior",
-    PALADIN = "Paladin",
-    HUNTER = "Hunter",
-    ROGUE = "Rogue",
-    PRIEST = "Priest",
-    DEATHKNIGHT = "DeathKnight",
-    SHAMAN = "Shaman",
-    MAGE = "Mage",
-    WARLOCK = "Warlock",
-    DRUID = "Druid",
-}
-
-local TALENT_ELEMENTS = {
-    WARRIOR = "WarriorTalents",
-    PALADIN = "PaladinTalents",
-    HUNTER = "HunterTalents",
-    ROGUE = "RogueTalents",
-    PRIEST = "PriestTalents",
-    DEATHKNIGHT = "DeathKnightTalents",
-    SHAMAN = "ShamanTalents",
-    MAGE = "MageTalents",
-    WARLOCK = "WarlockTalents",
-    DRUID = "DruidTalents",
-}
-
-local SINGLE_MODEL = {
-    HUNTER = "Hunter",
-    MAGE = "Mage",
-    ROGUE = "Rogue",
-    WARLOCK = "Warlock",
-}
-
--- Tree index is 1..3 (the active spec's points-spent order); see GetTalentTabInfo.
-local MODEL_BY_TREE = {
-    WARRIOR = { "DPSWarr", "DPSWarr", "ProtWarr" },
-    PALADIN = { "Healadin", "ProtPaladin", "Retribution" },
-    PRIEST = { "HealPriest", "HealPriest", "ShadowPriest" },
-    SHAMAN = { "Elemental", "Enhance", "RestoSham" },
-    DEATHKNIGHT = { "TankDK", "DPSDK", "DPSDK" },
-    DRUID = { "Moonkin", "Cat", "Tree" },
-}
-
-local FALLBACK_MODEL = {
-    WARRIOR = "DPSWarr",
-    PALADIN = "Retribution",
-    PRIEST = "HealPriest",
-    SHAMAN = "Elemental",
-    DEATHKNIGHT = "DPSDK",
-    DRUID = "Cat",
-}
+local CLASSES = JRawrCharacterExporterClasses
+local FORMS = JRawrCharacterExporterForms
+if not CLASSES or not FORMS then
+    error("JRawrCharacterExporterClasses is missing; reinstall the addon")
+end
 
 local REGION_NAMES = { [1] = "US", [2] = "KR", [3] = "EU", [4] = "TW", [5] = "CN" }
 
@@ -127,10 +81,6 @@ local function escapeXml(value)
     value = value:gsub('"', "&quot;")
     value = value:gsub("'", "&apos;")
     return value
-end
-
-local function headerValue(value)
-    return escapeXml(value)
 end
 
 -- item:itemId:enchantId:gem1:gem2:gem3:... on 3.3.5.
@@ -184,13 +134,27 @@ local function availabilityEntry(gemmedId)
     return id .. "." .. gem1 .. "." .. gem2 .. "." .. gem3 .. "." .. enchant
 end
 
--- Tooltip/equip-location filter for bag items. Unknown items are kept (the optimizer will filter
+-- Tooltip/equip-location cache for bag items. Unknown items are kept (the optimizer will filter
 -- by slot); bags, quivers and non-equippable items are skipped.
-local function isEquippableItem(itemId)
+local itemEquipLocCache = {}
+
+local function itemEquipLoc(itemId)
+    local cached = itemEquipLocCache[itemId]
+    if cached ~= nil then
+        return cached
+    end
     if not GetItemInfo then
-        return true
+        return nil
     end
     local _, _, _, _, _, _, _, _, equipLoc = GetItemInfo(itemId)
+    if equipLoc ~= nil then
+        itemEquipLocCache[itemId] = equipLoc
+    end
+    return equipLoc
+end
+
+local function isEquippableItem(itemId)
+    local equipLoc = itemEquipLoc(itemId)
     if equipLoc == nil then
         return true
     end
@@ -199,6 +163,24 @@ local function isEquippableItem(itemId)
         return false
     end
     return true
+end
+
+-- Projectile bags (quivers/ammo pouches) sit in inventory slots 20..23, not in the normal
+-- equipment slots. Rawr has a ProjectileBag slot for them.
+local function equippedProjectileBag()
+    if not GetInventoryItemLink then
+        return nil
+    end
+    for slot = 20, 23 do
+        local gemmedId = gemmedIdFromLink(GetInventoryItemLink("player", slot))
+        if gemmedId then
+            local itemId = tonumber(string.match(gemmedId, "^(%d+)"))
+            if itemId and itemEquipLoc(itemId) == "INVTYPE_QUIVER" then
+                return gemmedId
+            end
+        end
+    end
+    return nil
 end
 
 local function addAvailability(available, seen, gemmedId)
@@ -252,27 +234,71 @@ local function bestTalentTree()
     return bestTab, bestPoints
 end
 
-local function inferModel(classToken)
-    if SINGLE_MODEL[classToken] then
-        return SINGLE_MODEL[classToken]
+local MOONKIN_FORM_SPELL = 24858
+local TREE_OF_LIFE_FORM_SPELL = 33891
+
+local function druidFormModel()
+    local form = GetShapeshiftForm and GetShapeshiftForm() or 0
+    if form == FORMS.BEAR then
+        return "Bear"
     end
-    local tree = bestTalentTree()
-    if classToken == "DRUID" then
-        if tree == 1 then
-            return "Moonkin"
-        elseif tree == 3 then
-            return "Tree"
-        end
-        local form = GetShapeshiftForm and GetShapeshiftForm() or 0
-        if form == 1 then
-            return "Bear"
-        elseif form == 5 then
-            return "Moonkin"
-        end
+    if form == FORMS.CAT then
         return "Cat"
     end
-    local byTree = MODEL_BY_TREE[classToken]
-    return (byTree and byTree[tree]) or FALLBACK_MODEL[classToken] or "Mage"
+    if form == FORMS.MOONKIN then
+        -- Form 5 is Moonkin or Tree of Life. Compare both the icon and (for clients that
+        -- return the name first) the localized spell name.
+        local formA, formB
+        if GetShapeshiftFormInfo then
+            formA, formB = GetShapeshiftFormInfo(FORMS.MOONKIN)
+        end
+        local moonkinName, moonkinIcon, treeName, treeIcon
+        if GetSpellInfo then
+            local function nameAndIcon(spellId)
+                local name, _, icon = GetSpellInfo(spellId)
+                return name, icon
+            end
+            moonkinName, moonkinIcon = nameAndIcon(MOONKIN_FORM_SPELL)
+            treeName, treeIcon = nameAndIcon(TREE_OF_LIFE_FORM_SPELL)
+        end
+        local function matches(name, icon)
+            return formA == name or formB == name or formA == icon or formB == icon
+        end
+        if matches(moonkinName, moonkinIcon) then
+            return "Moonkin"
+        end
+        if matches(treeName, treeIcon) then
+            return "Tree"
+        end
+        return "Moonkin"
+    end
+    return "Cat"
+end
+
+local function inferModel(classToken)
+    local info = CLASSES[classToken]
+    if not info then
+        error("unsupported class: " .. tostring(classToken))
+    end
+    if info.single then
+        return info.single
+    end
+
+    local tree, points = bestTalentTree()
+    if points <= 0 then
+        return info.fallback
+    end
+
+    if info.forms then
+        if tree == 1 then
+            return info.trees[1]
+        elseif tree == 3 then
+            return info.trees[3]
+        end
+        return druidFormModel()
+    end
+
+    return info.trees[tree] or info.fallback
 end
 
 -- Returns the compact talent/glyph string plus the talent-point and major-glyph counts used by the
@@ -317,13 +343,15 @@ local function buildTalentString(classToken, warnings)
     local sockets = (GetNumGlyphSockets and GetNumGlyphSockets()) or NUM_GLYPH_SLOTS or 6
     local group = GetActiveTalentGroup and GetActiveTalentGroup() or nil
     local majorSlots, majorMatched = 0, 0
-    if sockets > 0 and not GetGlyphLink and warnings then
-        warnings[#warnings + 1] = "GetGlyphLink is unavailable; glyphs cannot be exported"
+    if sockets > 0 and not GetGlyphLink and not GetSpellInfo and warnings then
+        warnings[#warnings + 1] = "GetGlyphLink and GetSpellInfo are unavailable; glyphs cannot be exported"
+    elseif sockets > 0 and not GetGlyphLink and warnings then
+        warnings[#warnings + 1] = "GetGlyphLink is unavailable; using glyph spell IDs"
     end
     for socket = 1, sockets do
-        local enabled, glyphType
+        local enabled, glyphType, glyphSpellID
         if GetGlyphSocketInfo then
-            enabled, glyphType = GetGlyphSocketInfo(socket, group)
+            enabled, glyphType, glyphSpellID = GetGlyphSocketInfo(socket, group)
         else
             enabled = true
         end
@@ -336,15 +364,21 @@ local function buildTalentString(classToken, warnings)
             majorSlots = majorSlots + 1
         end
         local link = GetGlyphLink and GetGlyphLink(socket, group) or nil
+        local name
         if type(link) == "string" and link ~= "" then
-            local name = string.match(link, "%[(.-)%]")
-            local rawIndex = name and info.glyphs[string.lower(name)]
+            name = string.match(link, "%[(.-)%]")
+        end
+        if not name and glyphSpellID and GetSpellInfo then
+            name = select(1, GetSpellInfo(glyphSpellID))
+        end
+        if name then
+            local rawIndex = info.glyphs[string.lower(name)]
             if rawIndex then
                 glyphChars[rawIndex + 1] = "1"
                 if isMajor then
                     majorMatched = majorMatched + 1
                 end
-            elseif warnings and name and isMajor then
+            elseif warnings and isMajor then
                 -- Rawr's tables include only some minor glyphs; an unmodeled minor glyph is
                 -- expected, but an unknown major glyph usually means a locale/name mismatch.
                 warnings[#warnings + 1] = "major glyph not in the Rawr table: " .. tostring(name)
@@ -403,16 +437,17 @@ local function buildExport()
     local classToken = select(2, UnitClass("player")) or ""
     local regionId = (GetCurrentRegion and GetCurrentRegion()) or 1
     local race = RACE_NAMES[raceToken]
-    local className = CLASS_NAMES[classToken]
+    local classInfo = CLASSES[classToken]
 
-    if not race or not className then
+    if not race or not classInfo then
         error("unknown race/class token: " .. tostring(raceToken) .. "/" .. tostring(classToken))
     end
+    local className = classInfo.name
 
     local warnings = {}
     local talentString, talentPoints, majorMatched, majorSlots =
         buildTalentString(classToken, warnings)
-    local talentElement = TALENT_ELEMENTS[classToken]
+    local talentElement = classInfo.talentElement
     if not talentString or not talentElement then
         error("no talent data for class " .. tostring(classToken))
     end
@@ -421,10 +456,10 @@ local function buildExport()
     local parts = {}
     parts[#parts + 1] = "  <Name>" .. escapeXml(name) .. "</Name>"
     parts[#parts + 1] = "  <Realm>" .. escapeXml(realm) .. "</Realm>"
-    parts[#parts + 1] = "  <Region>" .. headerValue(REGION_NAMES[regionId] or "US") .. "</Region>"
-    parts[#parts + 1] = "  <Race>" .. headerValue(race) .. "</Race>"
-    parts[#parts + 1] = "  <Class>" .. headerValue(className) .. "</Class>"
-    parts[#parts + 1] = "  <CurrentModel>" .. headerValue(model) .. "</CurrentModel>"
+    parts[#parts + 1] = "  <Region>" .. escapeXml(REGION_NAMES[regionId] or "US") .. "</Region>"
+    parts[#parts + 1] = "  <Race>" .. escapeXml(race) .. "</Race>"
+    parts[#parts + 1] = "  <Class>" .. escapeXml(className) .. "</Class>"
+    parts[#parts + 1] = "  <CurrentModel>" .. escapeXml(model) .. "</CurrentModel>"
     parts[#parts + 1] = "  <EnforceMetagemRequirements>true</EnforceMetagemRequirements>"
 
     local slotCount = 0
@@ -437,6 +472,12 @@ local function buildExport()
             addAvailability(available, seen, gemmedId)
             slotCount = slotCount + 1
         end
+    end
+    local projectileBag = equippedProjectileBag()
+    if projectileBag then
+        parts[#parts + 1] = "  <ProjectileBag>" .. projectileBag .. "</ProjectileBag>"
+        addAvailability(available, seen, projectileBag)
+        slotCount = slotCount + 1
     end
     scanPossessions(available, seen)
     for _, entry in ipairs(available) do
@@ -496,7 +537,7 @@ local scrollFrame = CreateFrame("ScrollFrame", "JRawrCharacterExporterScrollFram
 scrollFrame:SetPoint("TOPLEFT", 16, -54)
 scrollFrame:SetPoint("BOTTOMRIGHT", -32, 54)
 scrollFrame:EnableMouseWheel(true)
-scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+scrollFrame:SetScript("OnMouseWheel", function(_, delta)
     local scrollBar = _G["JRawrCharacterExporterScrollBar"]
     local value = scrollBar:GetValue() - (delta * 40)
     if value < 0 then value = 0 end
@@ -521,10 +562,10 @@ local scrollBar = CreateFrame("Slider", "JRawrCharacterExporterScrollBar", frame
 scrollBar:SetPoint("TOPRIGHT", -12, -54)
 scrollBar:SetPoint("BOTTOMRIGHT", -12, 54)
 scrollBar:SetValueStep(1)
-scrollBar:SetScript("OnValueChanged", function(self, value)
+scrollBar:SetScript("OnValueChanged", function(_, value)
     scrollFrame:SetVerticalScroll(value)
 end)
-scrollFrame:SetScript("OnVerticalScroll", function(self, offset)
+scrollFrame:SetScript("OnVerticalScroll", function(_, offset)
     scrollBar:SetValue(offset)
 end)
 
@@ -598,7 +639,7 @@ frame:SetScript("OnShow", function()
 end)
 
 -- /jrawr debug (or /jrce debug) prints what the client reports for each glyph socket and whether
--- the English name from the link is in the generated Rawr table. Useful on a client where glyphs do not import.
+-- the link or spell name is in the generated Rawr table. Useful when glyphs do not import.
 local function printGlyphDebug()
     local group = GetActiveTalentGroup and GetActiveTalentGroup() or nil
     local sockets = (GetNumGlyphSockets and GetNumGlyphSockets()) or NUM_GLYPH_SLOTS or 6
@@ -613,6 +654,9 @@ local function printGlyphDebug()
         local link = GetGlyphLink and GetGlyphLink(socket, group) or ""
         if type(link) ~= "string" then link = "" end
         local name = link ~= "" and string.match(link, "%[(.-)%]") or nil
+        if not name and glyphSpellID and GetSpellInfo then
+            name = select(1, GetSpellInfo(glyphSpellID))
+        end
         local matched = name and info and info.glyphs[string.lower(name)] ~= nil
         print(string.format("  %d: enabled=%s type=%s spell=%s name=%s match=%s",
             socket, tostring(enabled), tostring(glyphType), tostring(glyphSpellID),
