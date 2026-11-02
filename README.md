@@ -3,8 +3,8 @@
 [![test](https://github.com/AdrianoBotti/JRawrCharacterExporter/actions/workflows/test.yml/badge.svg)](https://github.com/AdrianoBotti/JRawrCharacterExporter/actions/workflows/test.yml)
 
 A World of Warcraft 3.3.5 (Wrath of the Lich King) addon that exports the current character as Rawr
-character XML. The XML is shown in a copyable box and can be pasted into JRawr or the original
-WotLK Rawr tool.
+character XML. The XML is shown in a copyable box and can be pasted into
+[JRawr](https://github.com/AdrianoBotti/JRawr) or the original WotLK Rawr tool.
 
 ## Features
 
@@ -16,7 +16,8 @@ primary/secondary professions.
 ## Requirements
 
 - World of Warcraft 3.3.5a.
-- JRawr or the original WotLK 3.3.5a Rawr tool for importing the XML.
+- [JRawr](https://github.com/AdrianoBotti/JRawr), a local Java port of Rawr for WotLK 3.3.5a, or
+  the original WotLK 3.3.5a Rawr tool for importing the XML.
 - Optional for development: Lua 5.1, `luacheck` and Python 3.
 
 ## Installation
@@ -38,8 +39,8 @@ Or copy this folder there directly. It must contain `JRawrCharacterExporter.toc`
    frame has been opened.
 2. Type `/jrawr` (or `/jrce`) in game.
 3. Click **Select All** (or click the box and press Ctrl+A), then press **Ctrl+C**.
-4. Open JRawr, go to **File → Import**, paste into the **Character XML** box and import. The same
-   XML can be loaded by the original WotLK Rawr tool.
+4. Open JRawr, use **Character → Import…**, paste into the **Character XML** box and import. In the
+   original WotLK Rawr tool the same command is **File → Import**; the XML works in both.
 
 ## Compatibility
 
@@ -133,8 +134,8 @@ checklist.
 
 ## Acknowledgements
 
-This addon is part of the JRawr project and builds on the character XML format and talent data of
-the original Rawr project. See `NOTICE` for attribution.
+This addon is part of the [JRawr project](https://github.com/AdrianoBotti/JRawr) and builds on the
+character XML format and talent data of the original Rawr project. See `NOTICE` for attribution.
 
 ## License
 
