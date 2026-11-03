@@ -28,7 +28,10 @@ local function newState()
         formIcon5 = "Interface\\Icons\\Spell_Nature_ForceOfNature",
         tabs = 3,
         points = { 60, 0, 0 },
+        pointsByGroup = false,
         talents = {},
+        talentsByGroup = false,
+        previewPoints = false,
         glyphSockets = {},
         glyphSocketCount = 6,
         talentGroup = 1,
@@ -195,23 +198,48 @@ end
 function GetSpellInfo(spellId)
     local name = state.spellNames[spellId]
     if name then
-        return name, "", "Interface\\Icons\\INV_Misc_QuestionMark"
+        return name, "", "Interface\\Icons\\INV_Misc_QuestionMark", 0, 0, 0, spellId
     end
     local icon = FORM_ICONS[spellId]
     if icon then
-        return "Spell " .. tostring(spellId), "", icon
+        return "Spell " .. tostring(spellId), "", icon, 0, 0, 0, spellId
     end
     return nil
 end
 function GetNumTalentTabs() return state.tabs end
-function GetTalentTabInfo(tab) return "Tree" .. tab, "icon", state.points[tab] or 0 end
-function GetNumTalents(tab) return #(state.talents[tab] or {}) end
-function GetTalentInfo(tab, index)
-    local talent = state.talents[tab] and state.talents[tab][index]
-    if not talent then
-        return "Talent", "icon", 1, 1, 0, 5
+-- 3.3.5 signature: name, iconTexture, pointsSpent, background, previewPointsSpent.
+function GetTalentTabInfo(tab, inspect, pet, group)
+    local points = state.points
+    if state.pointsByGroup then
+        points = state.pointsByGroup[group or state.talentGroup] or points
     end
-    return "Talent", "icon", talent[1], talent[2], talent[3], 5
+    local previewPoints = 0
+    if state.previewPoints then
+        previewPoints = state.previewPoints[tab] or 0
+    end
+    return "Tree" .. tab, "icon", points[tab] or 0, "TalentFrame" .. tab, previewPoints
+end
+function GetNumTalents(tab)
+    local talents = state.talents
+    if state.talentsByGroup then
+        talents = state.talentsByGroup[state.talentGroup] or talents
+    end
+    return #(talents[tab] or {})
+end
+-- 3.3.5 signature: name, iconTexture, tier, column, rank, maxRank, isExceptional,
+-- meetsPrereq, previewRank, meetsPreviewPrereq.
+function GetTalentInfo(tab, index, inspect, pet, group)
+    local talents = state.talents
+    if state.talentsByGroup then
+        talents = state.talentsByGroup[group or state.talentGroup] or talents
+    end
+    local talent = talents[tab] and talents[tab][index]
+    if not talent then
+        return "Talent", "icon", 1, 1, 0, 5, true, true, 0, true
+    end
+    local rank = talent[3] or 0
+    return "Talent", "icon", talent[1], talent[2], rank, 5,
+        true, true, talent[4] or rank, true
 end
 
 -- 3.3.5 socket layout: 1 and 4 and 6 are major, 2, 3 and 5 are minor. The socket keeps its type

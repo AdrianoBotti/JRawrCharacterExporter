@@ -122,6 +122,9 @@ test/run.sh --write-samples
 
 Use `--write-samples` only for an intentional XML change; inspect the diff before committing it.
 
+`tools/check-jrawr-import.sh` loads the committed samples through JRawr's real character importer
+(Java 25 and a JRawr checkout are required). CI runs it on pull requests and releases wait for it.
+
 ## Contributing
 
 Contributions are welcome. If you find a bug or have an improvement, open an issue at

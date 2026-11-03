@@ -18,8 +18,13 @@ jobs:
       - name: Run static checks and offline tests
         run: ./check.sh
 
+  jrawr-import:
+    uses: ./.github/workflows/jrawr-import.yml
+    with:
+      jrawr_ref: ${{ vars.JRAWR_REF || 'main' }}
+
   release:
-    needs: test
+    needs: [test, jrawr-import]
     runs-on: ubuntu-latest
     permissions:
       contents: write

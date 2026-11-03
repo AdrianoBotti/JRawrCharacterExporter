@@ -42,6 +42,25 @@ The output samples are committed here and compared byte-for-byte by a normal har
 the addon's own XML/importer contract; JRawr no longer vendors copies (DECISIONS #129). After an
 intentional addon output change run `--write-samples` and inspect the diff.
 
+## JRawr import compatibility
+
+`tools/check-jrawr-import.sh` loads every committed sample through JRawr's
+`CharacterFixtureLoader`, the same parser used by the application import. It is run by CI and can
+be run locally with a JRawr checkout next to this repository:
+
+```bash
+JRAWR_DIR=../JRawr tools/check-jrawr-import.sh
+```
+
+Requirements are Java 25, a JRawr checkout and network access on the first Gradle run. The script
+copies a small JUnit test into JRawr's `rawr-data` test source tree temporarily and removes it on
+exit. It checks XML parsing, enum/model/slot names, `AvailableItems` counts and exact talent/glyph
+round-tripping. The round-trip matters: JRawr silently ignores a glyph string whose length does not
+match its glyph table, so a length mismatch would otherwise import without glyphs.
+
+CI checks JRawr `main` by default. Set the repository variable `JRAWR_REF` to a tag or commit to pin
+the PR check; both `test.yml` and `release.yml` run the check, so a failing import blocks releases.
+
 ## Data table
 
 `JRawrCharacterExporterData.lua` is generated from the talent/glyph annotations in the JRawr
@@ -58,8 +77,10 @@ This is an offline API-level test, not an in-game test. It cannot catch API diff
 specific client build, taint, secure-code restrictions, or the copy/paste UI; those still need one
 manual run on a 3.3.5 client. See `docs/IN_GAME_TEST.md`.
 
-The stubs are the harness's model of the client. They follow the documented 3.3.5 signatures
-(`GetTalentInfo`, `GetTalentTabInfo`, `GetNumSkillLines`, `GetSkillLineInfo`). In particular,
+The stubs are the harness's model of the client. They return the full documented 3.3.5 tuples
+(`GetTalentTabInfo` five values, `GetTalentInfo` ten values, `GetSpellInfo` seven values) and model
+active dual-spec talent groups, so a call that accidentally passes extra return values to another
+function fails in the suite as it would in the client. In particular,
 `GetGlyphSocketInfo(socket, group)` returns `enabled, glyphType, glyphSpellID, icon` and no link;
 enabled means the socket is unlocked. Glyph presence/name comes from
 `GetGlyphLink(socket, GetActiveTalentGroup())` (stubbed with `""` for empty sockets), with

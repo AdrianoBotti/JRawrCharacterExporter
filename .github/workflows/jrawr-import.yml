@@ -1,0 +1,49 @@
+name: jrawr-import
+
+on:
+  workflow_call:
+    inputs:
+      jrawr_ref:
+        description: JRawr branch, tag or commit to test against
+        required: false
+        type: string
+        default: main
+  workflow_dispatch:
+    inputs:
+      jrawr_ref:
+        description: JRawr branch, tag or commit to test against
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out JRawr
+        uses: actions/checkout@v5
+        with:
+          repository: AdrianoBotti/JRawr
+          path: .ci/JRawr
+          ref: ${{ inputs.jrawr_ref }}
+          fetch-depth: 1
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+          cache-dependency-path: |
+            .ci/JRawr/jrawr/**/*.gradle*
+            .ci/JRawr/jrawr/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Check addon samples import into JRawr
+        env:
+          JRAWR_DIR: ${{ github.workspace }}/.ci/JRawr
+        run: tools/check-jrawr-import.sh

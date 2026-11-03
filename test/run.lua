@@ -5,7 +5,7 @@
 --
 -- The harness (test/wow_api.lua) stubs the WoW 3.3.5 API. This file loads the real addon files,
 -- runs the scenarios and checks the generated Rawr XML. --write-samples regenerates
--- test/output_samples/*.xml, which JRawrCharacterExporterAddonSamplesTest loads through the Java
+-- test/output_samples/*.xml, which tools/check-jrawr-import.sh loads through JRawr's Java
 -- character importer. The committed samples are the contract between the Lua addon and Java.
 
 local scriptPath = (arg and arg[0]) or "test/run.lua"
@@ -286,6 +286,13 @@ test("missing region, professions and shapeshift APIs degrade safely", function(
     equal(tag(xml, "CurrentModel"), "Cat", "missing GetShapeshiftForm defaults to Cat")
 end)
 
+test("missing GetNumGlyphSockets falls back to NUM_GLYPH_SLOTS", function()
+    scenario()
+    local xml, status = withoutGlobal("GetNumGlyphSockets", showExport)
+    contains(xml, "<MageTalents>", "export still produced")
+    contains(status, "0/3 major glyphs", "socket count fallback")
+end)
+
 test("all inventory slots map to Rawr names", function()
     scenario()
     local slots = {
@@ -421,6 +428,53 @@ test("glyphs follow the active dual-spec talent group", function()
     equal(glyphs:sub(3, 3), "1", "active-spec glyph is exported")
     equal(countChar(glyphs, "1"), 1, "one glyph set")
     equal(status, "0 slots, 0 available, 0 talent points, 1/3 major glyphs, model Mage", "status")
+end)
+
+test("API stubs return the full 3.3.5 return tuples", function()
+    scenario()
+    equal(select("#", GetTalentTabInfo(1)), 5, "GetTalentTabInfo returns")
+    equal(select("#", GetTalentInfo(1, 1)), 10, "GetTalentInfo returns")
+    equal(select("#", GetSpellInfo(24858)), 7, "GetSpellInfo returns")
+    equal(select("#", GetShapeshiftFormInfo(5)), 4, "GetShapeshiftFormInfo returns")
+    equal(select("#", GetGlyphSocketInfo(1)), 4, "GetGlyphSocketInfo returns")
+end)
+
+test("active dual spec drives model and talents", function()
+    scenario({
+        classToken = "SHAMAN",
+        className = "Shaman",
+        talentGroup = 2,
+        pointsByGroup = { [1] = { 60, 0, 0 }, [2] = { 0, 0, 60 } },
+        talentsByGroup = {
+            [1] = { [1] = { { 1, 2, 1 } } },
+            [2] = { [3] = { { 1, 2, 5 } } },
+        },
+    })
+    local xml, status = showExport()
+    equal(tag(xml, "CurrentModel"), "RestoSham", "secondary-spec model")
+    local talents = splitTalents(xml, "ShamanTalents")
+    equal(talents:sub(55, 55), "5", "secondary-spec talent rank")
+    equal(countChar(talents, "[1-9]"), 1, "primary-spec talent is not exported")
+    equal(status, "0 slots, 0 available, 5 talent points, 0/3 major glyphs, model RestoSham", "status")
+end)
+
+test("preview talent points do not affect model inference", function()
+    scenario({
+        classToken = "SHAMAN",
+        className = "Shaman",
+        points = { 0, 0, 0 },
+        previewPoints = { 0, 60, 0 },
+    })
+    equal(tag(showExport(), "CurrentModel"), "Elemental", "zero-point fallback ignores preview")
+end)
+
+test("preview talent ranks are not exported", function()
+    scenario({ points = { 60, 0, 0 } })
+    state.talents = { [1] = { { 1, 1, 1, 5 } } }
+    local xml, status = showExport()
+    local talents = splitTalents(xml, "MageTalents")
+    equal(talents:sub(1, 1), "1", "actual rank is exported")
+    equal(status, "0 slots, 0 available, 1 talent points, 0/3 major glyphs, model Mage", "status")
 end)
 
 test("model inference for every class and spec", function()

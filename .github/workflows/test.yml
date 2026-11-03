@@ -18,3 +18,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y lua5.1 lua-check
       - name: Run static checks and offline tests
         run: ./check.sh
+
+  jrawr-import:
+    uses: ./.github/workflows/jrawr-import.yml
+    with:
+      jrawr_ref: ${{ vars.JRAWR_REF || 'main' }}

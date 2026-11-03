@@ -225,7 +225,8 @@ local function bestTalentTree()
     local bestTab = 1
     local bestPoints = -1
     for tab = 1, tabs do
-        local points = tonumber(select(3, GetTalentTabInfo(tab))) or 0
+        local _, _, pointsSpent = GetTalentTabInfo(tab)
+        local points = tonumber(pointsSpent) or 0
         if points > bestPoints then
             bestPoints = points
             bestTab = tab

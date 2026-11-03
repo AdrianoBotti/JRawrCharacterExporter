@@ -24,9 +24,9 @@ Do not paste account credentials or other private information.
 1. Fork the repository and create a focused branch.
 2. Keep the addon compatible with WoW 3.3.5a and the original WotLK Rawr character XML.
 3. Add or update a Lua test for behavior changes. Run `./check.sh`.
-4. If the XML output changes intentionally, run `test/run.sh --write-samples`, inspect the diff,
-   and copy the updated `test/output_samples/*.xml` files into JRawr's
-   `jrawr/rawr-data/src/test/resources/jrawr-character-exporter-samples/` directory.
+4. If the XML output changes intentionally, run `test/run.sh --write-samples` and inspect the diff.
+   The samples are loaded directly from this repository by the JRawr import compatibility check; do
+   not copy them into JRawr.
 5. Update the README, `test/README.md` or `docs/IN_GAME_TEST.md` when behavior or testing changes.
 6. Do not hand-edit generated files such as `JRawrCharacterExporterData.lua`; regenerate them from
    the JRawr talent annotations instead.
@@ -34,14 +34,17 @@ Do not paste account credentials or other private information.
 
 ## Development checks
 
-Requirements: Lua 5.1, optionally `luacheck` and Python 3.
+Requirements: Lua 5.1, optionally `luacheck` and Python 3. The JRawr import compatibility check
+also needs Java 25 and a JRawr checkout (default `../JRawr`).
 
 ```bash
 ./check.sh
 test/run.sh
+JRAWR_DIR=../JRawr tools/check-jrawr-import.sh
 ```
 
-`check.sh` runs `luacheck` when available, the Lua suite and `git diff --check`.
+`check.sh` runs `luacheck` when available, the Lua suite and `git diff --check`. The JRawr check
+loads the committed samples through JRawr's real character importer and is also run by CI.
 
 ## Scope and compatibility
 
