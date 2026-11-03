@@ -7,13 +7,13 @@ on:
         description: JRawr branch, tag or commit to test against
         required: false
         type: string
-        default: main
+        default: master
   workflow_dispatch:
     inputs:
       jrawr_ref:
         description: JRawr branch, tag or commit to test against
         required: false
-        default: main
+        default: master
         type: string
 
 permissions:

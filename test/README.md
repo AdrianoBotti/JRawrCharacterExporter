@@ -58,7 +58,7 @@ exit. It checks XML parsing, enum/model/slot names, `AvailableItems` counts and 
 round-tripping. The round-trip matters: JRawr silently ignores a glyph string whose length does not
 match its glyph table, so a length mismatch would otherwise import without glyphs.
 
-CI checks JRawr `main` by default. Set the repository variable `JRAWR_REF` to a tag or commit to pin
+CI checks JRawr `master` by default. Set the repository variable `JRAWR_REF` to a tag or commit to pin
 the PR check; both `test.yml` and `release.yml` run the check, so a failing import blocks releases.
 
 ## Data table

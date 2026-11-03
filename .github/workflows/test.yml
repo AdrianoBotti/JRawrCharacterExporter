@@ -22,4 +22,4 @@ jobs:
   jrawr-import:
     uses: ./.github/workflows/jrawr-import.yml
     with:
-      jrawr_ref: ${{ vars.JRAWR_REF || 'main' }}
+      jrawr_ref: ${{ vars.JRAWR_REF || 'master' }}
