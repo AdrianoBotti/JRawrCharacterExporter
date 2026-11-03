@@ -1,6 +1,6 @@
 # JRawr Character Exporter
 
-[![test](https://github.com/AdrianoBotti/JRawrCharacterExporter/actions/workflows/test.yml/badge.svg)](https://github.com/AdrianoBotti/JRawrCharacterExporter/actions/workflows/test.yml)
+[![CI](https://github.com/AdrianoBotti/JRawrCharacterExporter/actions/workflows/ci.yml/badge.svg)](https://github.com/AdrianoBotti/JRawrCharacterExporter/actions/workflows/ci.yml)
 
 A World of Warcraft 3.3.5 (Wrath of the Lich King) addon that exports the current character as Rawr
 character XML. The XML is shown in a copyable box and can be pasted into
@@ -132,7 +132,7 @@ https://github.com/AdrianoBotti/JRawrCharacterExporter/issues. Pull requests are
 please keep the addon compatible with WoW 3.3.5a and original Rawr, run `./check.sh`, and add or
 update tests and output samples for behavior changes.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for issue details, the test workflow and the pull-request
+See [CONTRIBUTING.md](CONTRIBUTING.md) for issue details, the CI workflow and the pull-request
 checklist.
 
 ## Acknowledgements

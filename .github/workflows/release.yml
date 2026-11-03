@@ -9,22 +9,13 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Install Lua 5.1 and luacheck
-        run: sudo apt-get update && sudo apt-get install -y lua5.1 lua-check
-      - name: Run static checks and offline tests
-        run: ./check.sh
-
-  jrawr-import:
-    uses: ./.github/workflows/jrawr-import.yml
+  verify:
+    uses: ./.github/workflows/verify.yml
     with:
       jrawr_ref: ${{ vars.JRAWR_REF || 'master' }}
 
   release:
-    needs: [test, jrawr-import]
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: write

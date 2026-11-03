@@ -59,7 +59,7 @@ round-tripping. The round-trip matters: JRawr silently ignores a glyph string wh
 match its glyph table, so a length mismatch would otherwise import without glyphs.
 
 CI checks JRawr `master` by default. Set the repository variable `JRAWR_REF` to a tag or commit to pin
-the PR check; both `test.yml` and `release.yml` run the check, so a failing import blocks releases.
+the PR check; both `ci.yml` and `release.yml` run the check, so a failing import blocks releases.
 
 ## Data table
 

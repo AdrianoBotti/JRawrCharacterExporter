@@ -1,16 +1,19 @@
-name: test
+name: verify
 
 on:
-  push:
-  pull_request:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      jrawr_ref:
+        description: JRawr branch, tag or commit to test against
+        required: false
+        type: string
+        default: master
 
-concurrency:
-  group: test-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: read
 
 jobs:
-  lua:
+  lua-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -22,4 +25,4 @@ jobs:
   jrawr-import:
     uses: ./.github/workflows/jrawr-import.yml
     with:
-      jrawr_ref: ${{ vars.JRAWR_REF || 'master' }}
+      jrawr_ref: ${{ inputs.jrawr_ref }}
